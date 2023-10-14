@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func main() {
@@ -16,29 +17,55 @@ func main() {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-
 	scanner.Scan()
-	genAStart, _ := strconv.ParseInt(scanner.Text(), 10, 64)
+	moves := strings.Split(scanner.Text(), ",")
 
-	scanner.Scan()
-	genBStart, _ := strconv.ParseInt(scanner.Text(), 10, 64)
+	programs := []rune("abcdefghijklmnop")
 
-	genAFactor := int64(16807)
-	genBFactor := int64(48271)
-	modulus := int64(2147483647)
-
-	genA := genAStart
-	genB := genBStart
-	matches := 0
-
-	for i := 0; i < 40000000; i++ {
-		genA = (genA * genAFactor) % modulus
-		genB = (genB * genBFactor) % modulus
-
-		if genA&0xFFFF == genB&0xFFFF {
-			matches++
+	for _, move := range moves {
+		switch move[0] {
+		case 's':
+			x, _ := strconv.Atoi(move[1:])
+			spin(programs, x)
+		case 'x':
+			positions := strings.Split(move[1:], "/")
+			A, _ := strconv.Atoi(positions[0])
+			B, _ := strconv.Atoi(positions[1])
+			exchange(programs, A, B)
+		case 'p':
+			positions := strings.Split(move[1:], "/")
+			A := rune(positions[0][0])
+			B := rune(positions[1][0])
+			partner(programs, A, B)
 		}
 	}
 
-	fmt.Println(matches)
+	fmt.Println(string(programs))
+}
+
+func spin(programs []rune, x int) {
+	n := len(programs)
+	temp := make([]rune, n)
+	copy(temp, programs)
+
+	for i := 0; i < n; i++ {
+		programs[(i+x)%n] = temp[i]
+	}
+}
+
+func exchange(programs []rune, A int, B int) {
+	programs[A], programs[B] = programs[B], programs[A]
+}
+
+func partner(programs []rune, A rune, B rune) {
+	var indexA, indexB int
+	for i, p := range programs {
+		if p == A {
+			indexA = i
+		}
+		if p == B {
+			indexB = i
+		}
+	}
+	exchange(programs, indexA, indexB)
 }
