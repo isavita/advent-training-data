@@ -4,59 +4,83 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 )
 
-type position struct {
-	x, y int
+func isPrime(n int) bool {
+	for i := 2; i*i <= n; i++ {
+		if n%i == 0 {
+			return false
+		}
+	}
+	return true
 }
 
-const (
-	Clean = iota
-	Weakened
-	Infected
-	Flagged
-)
+func partOne() {
+	file, err := os.Open("input.txt")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
 
-func main() {
-	file, _ := os.Open("input.txt")
+	var instructions []string
 	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		instructions = append(instructions, scanner.Text())
+	}
 
-	grid := make(map[position]int)
-	var startX, startY int
-	for y := 0; scanner.Scan(); y++ {
-		line := scanner.Text()
-		for x, c := range line {
-			if c == '#' {
-				grid[position{x, y}] = Infected
+	registers := make(map[string]int)
+	mulCounter := 0
+
+	for i := 0; i < len(instructions); {
+		parts := strings.Fields(instructions[i])
+		cmd, x, y := parts[0], parts[1], parts[2]
+		valY, _ := strconv.Atoi(y)
+
+		if y >= "a" && y <= "z" {
+			valY = registers[y]
+		}
+
+		switch cmd {
+		case "set":
+			registers[x] = valY
+		case "sub":
+			registers[x] -= valY
+		case "mul":
+			registers[x] *= valY
+			mulCounter++
+		case "jnz":
+			valX, _ := strconv.Atoi(x)
+			if x >= "a" && x <= "z" {
+				valX = registers[x]
+			}
+			if valX != 0 {
+				i += valY
+				continue
 			}
 		}
-		startX, startY = len(line)/2, y/2
+		i++
 	}
 
-	dx := []int{0, 1, 0, -1}
-	dy := []int{-1, 0, 1, 0}
+	fmt.Println(mulCounter)
+}
 
-	x, y, dir := startX, startY, 0
-	infectedCount := 0
+func partTwo() {
+	b := 57*100 + 100000
+	c := b + 17000
+	h := 0
 
-	for i := 0; i < 10000000; i++ {
-		pos := position{x, y}
-		switch grid[pos] {
-		case Clean:
-			dir = (dir - 1 + 4) % 4
-			grid[pos] = Weakened
-		case Weakened:
-			grid[pos] = Infected
-			infectedCount++
-		case Infected:
-			dir = (dir + 1) % 4
-			grid[pos] = Flagged
-		case Flagged:
-			dir = (dir + 2) % 4
-			grid[pos] = Clean
+	for x := b; x <= c; x += 17 {
+		if !isPrime(x) {
+			h++
 		}
-		x, y = x+dx[dir], y+dy[dir]
 	}
 
-	fmt.Println(infectedCount)
+	fmt.Println(h)
+}
+
+func main() {
+	partOne()
+	partTwo()
 }

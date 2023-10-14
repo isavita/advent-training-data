@@ -4,46 +4,53 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 )
 
-type position struct {
-	x, y int
-}
-
 func main() {
-	file, _ := os.Open("input.txt")
-	scanner := bufio.NewScanner(file)
+	file, err := os.Open("input.txt")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
 
-	grid := make(map[position]bool)
-	var startX, startY int
-	for y := 0; scanner.Scan(); y++ {
-		line := scanner.Text()
-		for x, c := range line {
-			if c == '#' {
-				grid[position{x, y}] = true
+	var mulCount int
+	var pointer int
+	registers := make(map[string]int)
+	instructions := []string{}
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		instructions = append(instructions, scanner.Text())
+	}
+
+	for pointer >= 0 && pointer < len(instructions) {
+		parts := strings.Fields(instructions[pointer])
+		cmd, x, y := parts[0], parts[1], parts[2]
+
+		getValue := func(s string) int {
+			if v, err := strconv.Atoi(s); err == nil {
+				return v
+			}
+			return registers[s]
+		}
+
+		switch cmd {
+		case "set":
+			registers[x] = getValue(y)
+		case "sub":
+			registers[x] -= getValue(y)
+		case "mul":
+			registers[x] *= getValue(y)
+			mulCount++
+		case "jnz":
+			if getValue(x) != 0 {
+				pointer += getValue(y) - 1
 			}
 		}
-		startX, startY = len(line)/2, y/2
+		pointer++
 	}
 
-	dx := []int{0, 1, 0, -1}
-	dy := []int{-1, 0, 1, 0}
-
-	x, y, dir := startX, startY, 0
-	infectedCount := 0
-
-	for i := 0; i < 10000; i++ {
-		pos := position{x, y}
-		if grid[pos] {
-			dir = (dir + 1) % 4
-			delete(grid, pos)
-		} else {
-			dir = (dir - 1 + 4) % 4
-			grid[pos] = true
-			infectedCount++
-		}
-		x, y = x+dx[dir], y+dy[dir]
-	}
-
-	fmt.Println(infectedCount)
+	fmt.Println(mulCount)
 }
