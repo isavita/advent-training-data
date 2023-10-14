@@ -14,4 +14,3 @@
         }
     ]
 }
-// awk '{ gsub("\n", "\\n"); gsub("\"", "\\\""); printf "%s\\n", $0 }' t1.txt | tr -d '\n' | pbcopy

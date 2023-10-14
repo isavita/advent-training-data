@@ -1,0 +1,4 @@
+// fix not escaped \n or \"
+awk '{ gsub("\n", "\\n"); gsub("\"", "\\\""); printf "%s\\n", $0 }' t1.txt | tr -d '\n' | pbcopy
+// double check if this is valid json
+cat advent_of_code_2017.json | python -c "import sys,json;json.loads(sys.stdin.read());print('OK')"
