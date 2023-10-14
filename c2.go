@@ -8,79 +8,54 @@ import (
 	"strings"
 )
 
-func isPrime(n int) bool {
-	for i := 2; i*i <= n; i++ {
-		if n%i == 0 {
-			return false
-		}
-	}
-	return true
+type Component struct {
+	a, b int
 }
 
-func partOne() {
+var maxStrength int
+var maxLength int
+
+func findStrongestLongestBridge(components []Component, used []bool, port, strength, length int) {
+	if length > maxLength || (length == maxLength && strength > maxStrength) {
+		maxStrength = strength
+		maxLength = length
+	}
+
+	for i, c := range components {
+		if used[i] {
+			continue
+		}
+
+		if c.a == port || c.b == port {
+			used[i] = true
+			nextPort := c.a
+			if c.a == port {
+				nextPort = c.b
+			}
+			findStrongestLongestBridge(components, used, nextPort, strength+c.a+c.b, length+1)
+			used[i] = false
+		}
+	}
+}
+
+func main() {
 	file, err := os.Open("input.txt")
 	if err != nil {
 		panic(err)
 	}
 	defer file.Close()
 
-	var instructions []string
+	var components []Component
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		instructions = append(instructions, scanner.Text())
+		ports := strings.Split(scanner.Text(), "/")
+		a, _ := strconv.Atoi(ports[0])
+		b, _ := strconv.Atoi(ports[1])
+		components = append(components, Component{a, b})
 	}
 
-	registers := make(map[string]int)
-	mulCounter := 0
+	used := make([]bool, len(components))
+	findStrongestLongestBridge(components, used, 0, 0, 0)
 
-	for i := 0; i < len(instructions); {
-		parts := strings.Fields(instructions[i])
-		cmd, x, y := parts[0], parts[1], parts[2]
-		valY, _ := strconv.Atoi(y)
-
-		if y >= "a" && y <= "z" {
-			valY = registers[y]
-		}
-
-		switch cmd {
-		case "set":
-			registers[x] = valY
-		case "sub":
-			registers[x] -= valY
-		case "mul":
-			registers[x] *= valY
-			mulCounter++
-		case "jnz":
-			valX, _ := strconv.Atoi(x)
-			if x >= "a" && x <= "z" {
-				valX = registers[x]
-			}
-			if valX != 0 {
-				i += valY
-				continue
-			}
-		}
-		i++
-	}
-
-	fmt.Println(mulCounter)
-}
-
-func partTwo() {
-	b := 57*100 + 100000
-	c := b + 17000
-	h := 0
-
-	for x := b; x <= c; x += 17 {
-		if !isPrime(x) {
-			h++
-		}
-	}
-
-	fmt.Println(h)
-}
-
-func main() {
-	partOne()
-	partTwo()
+	fmt.Println(maxStrength)
 }

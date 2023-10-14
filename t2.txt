@@ -1,27 +1,52 @@
---- Day 23: Coprocessor Conflagration ---
-You decide to head directly to the CPU and fix the printer from there. As you get close, you find an experimental coprocessor doing so much work that the local programs are afraid it will halt and catch fire. This would cause serious issues for the rest of the computer, so you head in and see what you can do.
+--- Day 24: Electromagnetic Moat ---
+The CPU itself is a large, black building surrounded by a bottomless pit. Enormous metal tubes extend outward from the side of the building at regular intervals and descend down into the void. There's no way to cross, but you need to get inside.
 
-The code it's running seems to be a variant of the kind you saw recently on that tablet. The general functionality seems very similar, but some of the instructions are different:
+No way, of course, other than building a bridge out of the magnetic components strewn about nearby.
 
-set X Y sets register X to the value of Y.
-sub X Y decreases register X by the value of Y.
-mul X Y sets register X to the result of multiplying the value contained in register X by the value of Y.
-jnz X Y jumps with an offset of the value of Y, but only if the value of X is not zero. (An offset of 2 skips the next instruction, an offset of -1 jumps to the previous instruction, and so on.)
-Only the instructions listed above are used. The eight registers here, named a through h, all start at 0.
+Each component has two ports, one on each end. The ports come in all different types, and only matching types can be connected. You take an inventory of the components by their port types (your puzzle input). Each port is identified by the number of pins it uses; more pins mean a stronger connection for your bridge. A 3/7 component, for example, has a type-3 port on one side, and a type-7 port on the other.
 
-The coprocessor is currently set to some kind of debug mode, which allows for testing, but prevents it from doing any meaningful work.
+Your side of the pit is metallic; a perfect surface to connect a magnetic, zero-pin port. Because of this, the first port you use must be of type 0. It doesn't matter what type of port you end with; your goal is just to make the bridge as strong as possible.
 
-If you run the program (your puzzle input), how many times is the mul instruction invoked?
+The strength of a bridge is the sum of the port types in each component. For example, if your bridge is made of components 0/3, 3/7, and 7/4, your bridge has a strength of 0+3 + 3+7 + 7+4 = 24.
 
-Your puzzle answer was 3025.
+For example, suppose you had the following components:
+
+0/2
+2/2
+2/3
+3/4
+3/5
+0/1
+10/1
+9/10
+With them, you could make the following valid bridges:
+
+0/1
+0/1--10/1
+0/1--10/1--9/10
+0/2
+0/2--2/3
+0/2--2/3--3/4
+0/2--2/3--3/5
+0/2--2/2
+0/2--2/2--2/3
+0/2--2/2--2/3--3/4
+0/2--2/2--2/3--3/5
+(Note how, as shown by 10/1, order of ports within a component doesn't matter. However, you may only use each port on a component once.)
+
+Of these bridges, the strongest one is 0/1--10/1--9/10; it has a strength of 0+1 + 1+10 + 10+9 = 31.
+
+What is the strength of the strongest bridge you can make with the components you have available?
+
+Your puzzle answer was 1868.
 
 --- Part Two ---
-Now, it's time to fix the problem.
+The bridge you've built isn't long enough; you can't jump the rest of the way.
 
-The debug mode switch is wired directly to register a. You flip the switch, which makes register a now start at 1 when the program is executed.
+In the example above, there are two longest bridges:
 
-Immediately, the coprocessor begins to overheat. Whoever wrote this program obviously didn't choose a very efficient implementation. You'll need to optimize the program if it has any hope of completing before Santa needs that printer working.
+0/2--2/2--2/3--3/4
+0/2--2/2--2/3--3/5
+Of them, the one which uses the 3/5 component is stronger; its strength is 0+2 + 2+2 + 2+3 + 3+5 = 19.
 
-The coprocessor's ultimate goal is to determine the final value left in register h once the program completes. Technically, if it had that... it wouldn't even need to run the program.
-
-After setting register a to 1, if the program were to run to completion, what value would be left in register h?
+What is the strength of the longest bridge you can make? If you can make multiple bridges of the longest length, pick the strongest one.

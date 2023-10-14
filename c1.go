@@ -8,6 +8,34 @@ import (
 	"strings"
 )
 
+type Component struct {
+	a, b int
+}
+
+var maxStrength int
+
+func findStrongestBridge(components []Component, used []bool, port, strength int) {
+	if strength > maxStrength {
+		maxStrength = strength
+	}
+
+	for i, c := range components {
+		if used[i] {
+			continue
+		}
+
+		if c.a == port || c.b == port {
+			used[i] = true
+			nextPort := c.a
+			if c.a == port {
+				nextPort = c.b
+			}
+			findStrongestBridge(components, used, nextPort, strength+c.a+c.b)
+			used[i] = false
+		}
+	}
+}
+
 func main() {
 	file, err := os.Open("input.txt")
 	if err != nil {
@@ -15,42 +43,17 @@ func main() {
 	}
 	defer file.Close()
 
-	var mulCount int
-	var pointer int
-	registers := make(map[string]int)
-	instructions := []string{}
-
+	var components []Component
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		instructions = append(instructions, scanner.Text())
+		ports := strings.Split(scanner.Text(), "/")
+		a, _ := strconv.Atoi(ports[0])
+		b, _ := strconv.Atoi(ports[1])
+		components = append(components, Component{a, b})
 	}
 
-	for pointer >= 0 && pointer < len(instructions) {
-		parts := strings.Fields(instructions[pointer])
-		cmd, x, y := parts[0], parts[1], parts[2]
+	used := make([]bool, len(components))
+	findStrongestBridge(components, used, 0, 0)
 
-		getValue := func(s string) int {
-			if v, err := strconv.Atoi(s); err == nil {
-				return v
-			}
-			return registers[s]
-		}
-
-		switch cmd {
-		case "set":
-			registers[x] = getValue(y)
-		case "sub":
-			registers[x] -= getValue(y)
-		case "mul":
-			registers[x] *= getValue(y)
-			mulCount++
-		case "jnz":
-			if getValue(x) != 0 {
-				pointer += getValue(y) - 1
-			}
-		}
-		pointer++
-	}
-
-	fmt.Println(mulCount)
+	fmt.Println(maxStrength)
 }
