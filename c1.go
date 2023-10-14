@@ -3,76 +3,112 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"math"
 	"os"
-	"strconv"
 	"strings"
 )
 
-type Particle struct {
-	p, v, a [3]int
-}
-
-func abs(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
-func manhattan(x [3]int) int {
-	return abs(x[0]) + abs(x[1]) + abs(x[2])
-}
-
 func main() {
-	file, err := os.Open("input.txt")
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
+	rules := make(map[string]string)
 
-	var particles []Particle
+	file, _ := os.Open("input.txt")
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		line := scanner.Text()
-		parts := strings.Split(line, ", ")
+		parts := strings.Split(scanner.Text(), " => ")
+		rules[parts[0]] = parts[1]
+	}
 
-		var p Particle
-		for i, part := range parts {
-			coords := strings.Split(part[3:len(part)-1], ",")
-			for j, coord := range coords {
-				num, _ := strconv.Atoi(coord)
-				switch i {
-				case 0:
-					p.p[j] = num
-				case 1:
-					p.v[j] = num
-				case 2:
-					p.a[j] = num
+	grid := []string{
+		".#.",
+		"..#",
+		"###",
+	}
+
+	for i := 0; i < 5; i++ {
+		var newSize int
+		var subSize int
+
+		if len(grid)%2 == 0 {
+			subSize = 2
+			newSize = len(grid) / 2 * 3
+		} else {
+			subSize = 3
+			newSize = len(grid) / 3 * 4
+		}
+
+		newGrid := make([]string, newSize)
+		for x := 0; x < newSize; x++ {
+			newGrid[x] = ""
+		}
+
+		for y := 0; y < len(grid); y += subSize {
+			for x := 0; x < len(grid); x += subSize {
+				var square []string
+				for dy := 0; dy < subSize; dy++ {
+					square = append(square, grid[y+dy][x:x+subSize])
+				}
+				newSquare := enhance(strings.Join(square, "/"), rules)
+				for dy, row := range strings.Split(newSquare, "/") {
+					newGrid[y/subSize*(subSize+1)+dy] += row
 				}
 			}
 		}
-		particles = append(particles, p)
+		grid = newGrid
 	}
 
-	var closestParticle int
-	minAccel := math.MaxInt64
-	minVelocity := math.MaxInt64
-	minPosition := math.MaxInt64
-
-	for i, particle := range particles {
-		accel := manhattan(particle.a)
-		velocity := manhattan(particle.v)
-		position := manhattan(particle.p)
-
-		if accel < minAccel || (accel == minAccel && velocity < minVelocity) ||
-			(accel == minAccel && velocity == minVelocity && position < minPosition) {
-			minAccel = accel
-			minVelocity = velocity
-			minPosition = position
-			closestParticle = i
+	count := 0
+	for _, row := range grid {
+		for _, pixel := range row {
+			if pixel == '#' {
+				count++
+			}
 		}
 	}
+	fmt.Println(count)
+}
 
-	fmt.Println(closestParticle)
+func enhance(input string, rules map[string]string) string {
+	for i := 0; i < 4; i++ {
+		if output, ok := rules[input]; ok {
+			return output
+		}
+		input = rotate(input)
+	}
+	input = flip(input)
+	for i := 0; i < 4; i++ {
+		if output, ok := rules[input]; ok {
+			return output
+		}
+		input = rotate(input)
+	}
+	return ""
+}
+
+func rotate(input string) string {
+	parts := strings.Split(input, "/")
+	size := len(parts)
+	newParts := make([]string, size)
+	for x := 0; x < size; x++ {
+		var newRow string
+		for y := size - 1; y >= 0; y-- {
+			newRow += string(parts[y][x])
+		}
+		newParts[x] = newRow
+	}
+	return strings.Join(newParts, "/")
+}
+
+func flip(input string) string {
+	parts := strings.Split(input, "/")
+	for i, part := range parts {
+		parts[i] = reverse(part)
+	}
+	return strings.Join(parts, "/")
+}
+
+func reverse(input string) string {
+	runes := []rune(input)
+	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+		runes[i], runes[j] = runes[j], runes[i]
+	}
+	return string(runes)
 }

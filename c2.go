@@ -4,66 +4,120 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 )
 
-type Particle struct {
-	p, v, a [3]int
-}
+var memo = make(map[string]string)
 
 func main() {
-	file, err := os.Open("input.txt")
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
+	rules := make(map[string]string)
 
-	var particles []Particle
+	file, _ := os.Open("input.txt")
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		line := scanner.Text()
-		parts := strings.Split(line, ", ")
+		parts := strings.Split(scanner.Text(), " => ")
+		rules[parts[0]] = parts[1]
+	}
 
-		var p Particle
-		for i, part := range parts {
-			coords := strings.Split(part[3:len(part)-1], ",")
-			for j, coord := range coords {
-				num, _ := strconv.Atoi(coord)
-				switch i {
-				case 0:
-					p.p[j] = num
-				case 1:
-					p.v[j] = num
-				case 2:
-					p.a[j] = num
+	grid := []string{
+		".#.",
+		"..#",
+		"###",
+	}
+
+	for i := 0; i < 18; i++ {
+		var newSize int
+		var subSize int
+
+		if len(grid)%2 == 0 {
+			subSize = 2
+			newSize = len(grid) / 2 * 3
+		} else {
+			subSize = 3
+			newSize = len(grid) / 3 * 4
+		}
+
+		newGrid := make([]string, newSize)
+		for x := 0; x < newSize; x++ {
+			newGrid[x] = ""
+		}
+
+		for y := 0; y < len(grid); y += subSize {
+			for x := 0; x < len(grid); x += subSize {
+				var square []string
+				for dy := 0; dy < subSize; dy++ {
+					square = append(square, grid[y+dy][x:x+subSize])
+				}
+				newSquare := enhance(strings.Join(square, "/"), rules)
+				for dy, row := range strings.Split(newSquare, "/") {
+					newGrid[y/subSize*(subSize+1)+dy] += row
 				}
 			}
 		}
-		particles = append(particles, p)
+		grid = newGrid
 	}
 
-	for tick := 0; tick < 1000; tick++ {
-		positions := make(map[string]int)
-		for i, particle := range particles {
-			for j := 0; j < 3; j++ {
-				particle.v[j] += particle.a[j]
-				particle.p[j] += particle.v[j]
+	count := 0
+	for _, row := range grid {
+		for _, pixel := range row {
+			if pixel == '#' {
+				count++
 			}
-			particles[i] = particle
-			posStr := fmt.Sprintf("%d,%d,%d", particle.p[0], particle.p[1], particle.p[2])
-			positions[posStr]++
 		}
+	}
+	fmt.Println(count)
+}
 
-		var newParticles []Particle
-		for _, particle := range particles {
-			posStr := fmt.Sprintf("%d,%d,%d", particle.p[0], particle.p[1], particle.p[2])
-			if positions[posStr] == 1 {
-				newParticles = append(newParticles, particle)
-			}
-		}
-		particles = newParticles
+func enhance(input string, rules map[string]string) string {
+	if result, ok := memo[input]; ok {
+		return result
 	}
 
-	fmt.Println(len(particles))
+	original := input
+	for i := 0; i < 4; i++ {
+		if output, ok := rules[input]; ok {
+			memo[original] = output
+			return output
+		}
+		input = rotate(input)
+	}
+	input = flip(input)
+	for i := 0; i < 4; i++ {
+		if output, ok := rules[input]; ok {
+			memo[original] = output
+			return output
+		}
+		input = rotate(input)
+	}
+	return ""
+}
+
+func rotate(input string) string {
+	parts := strings.Split(input, "/")
+	size := len(parts)
+	newParts := make([]string, size)
+	for x := 0; x < size; x++ {
+		var newRow string
+		for y := size - 1; y >= 0; y-- {
+			newRow += string(parts[y][x])
+		}
+		newParts[x] = newRow
+	}
+	return strings.Join(newParts, "/")
+}
+
+func flip(input string) string {
+	parts := strings.Split(input, "/")
+	for i, part := range parts {
+		parts[i] = reverse(part)
+	}
+	return strings.Join(parts, "/")
+}
+
+func reverse(input string) string {
+	runes := []rune(input)
+	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+		runes[i], runes[j] = runes[j], runes[i]
+	}
+	return string(runes)
 }
