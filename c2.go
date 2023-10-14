@@ -8,48 +8,46 @@ import (
 	"strings"
 )
 
-func DFS(node int, adj map[int][]int, visited map[int]bool) {
-	visited[node] = true
-	for _, neighbor := range adj[node] {
-		if !visited[neighbor] {
-			DFS(neighbor, adj, visited)
-		}
-	}
+type Scanner struct {
+	Range     int
+	Position  int
+	Direction int
 }
 
 func main() {
 	file, err := os.Open("input.txt")
 	if err != nil {
-		fmt.Println("File reading error", err)
+		fmt.Println("Error reading file:", err)
 		return
 	}
 	defer file.Close()
 
-	adj := make(map[int][]int)
+	firewall := make(map[int]*Scanner)
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
-		line := scanner.Text()
-		parts := strings.Split(line, " <-> ")
-		from, _ := strconv.Atoi(parts[0])
-		toNodes := strings.Split(parts[1], ", ")
-
-		for _, toNode := range toNodes {
-			to, _ := strconv.Atoi(toNode)
-			adj[from] = append(adj[from], to)
-			adj[to] = append(adj[to], from)
-		}
+		fields := strings.Split(scanner.Text(), ": ")
+		depth, _ := strconv.Atoi(fields[0])
+		rng, _ := strconv.Atoi(fields[1])
+		firewall[depth] = &Scanner{Range: rng, Position: 0, Direction: 1}
 	}
 
-	visited := make(map[int]bool)
-	groups := 0
-
-	for node := range adj {
-		if !visited[node] {
-			DFS(node, adj, visited)
-			groups++
+	delay := 0
+	for {
+		if passThrough(firewall, delay) {
+			break
 		}
+		delay++
 	}
 
-	fmt.Println(groups)
+	fmt.Println(delay)
+}
+
+func passThrough(firewall map[int]*Scanner, delay int) bool {
+	for depth, scanner := range firewall {
+		if (depth+delay)%(2*(scanner.Range-1)) == 0 {
+			return false
+		}
+	}
+	return true
 }
