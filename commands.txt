@@ -2,3 +2,47 @@
 awk '{ gsub("\n", "\\n"); gsub("\"", "\\\""); printf "%s\\n", $0 }' t1.txt | tr -d '\n' | pbcopy
 // double check if this is valid json
 cat advent_of_code_2017.json | python -c "import sys,json;json.loads(sys.stdin.read());print('OK')"
+// upload the files to OpenAI server
+curl https://api.openai.com/v1/files \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -F purpose="fine-tune" \
+  -F file="@advent_of_code_2017.jsonl"
+// OUTPUT: 
+{
+  "object": "file",
+  "id": "file-6FxMDEp284yjFl7qhQVP3ScT",
+  "purpose": "fine-tune",
+  "filename": "advent_of_code_2017.jsonl",
+  "bytes": 164576,
+  "created_at": 1697289560,
+  "status": "uploaded",
+  "status_details": null
+}
+// Start fine tuning job
+curl -X POST -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -d '{
+    "training_file": "file-6FxMDEp284yjFl7qhQVP3ScT",
+    "model": "gpt-3.5-turbo-0613"
+  }' https://api.openai.com/v1/fine_tuning/jobs
+// OUTPUT: 
+{
+    "object": "fine_tuning.job",
+    "id": "ftjob-fNPtJZii6grsMF4by5Dj7P8c",
+    "model": "gpt-3.5-turbo-0613",
+    "created_at": 1697290738,
+    "finished_at": null,
+    "fine_tuned_model": null,
+    "organization_id": "XXX",
+    "result_files": [],
+    "status": "validating_files",
+    "validation_file": null,
+    "training_file": "file-6FxMDEp284yjFl7qhQVP3ScT",
+    "hyperparameters": {
+        "n_epochs": "auto"
+    },
+    "trained_tokens": null,
+    "error": null
+}
+// Check fine tuned models https://platform.openai.com/finetune
+ft:gpt-3.5-turbo-0613:personal::89ZEf48O
