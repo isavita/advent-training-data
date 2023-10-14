@@ -4,120 +4,59 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"strings"
 )
 
-var memo = make(map[string]string)
+type position struct {
+	x, y int
+}
+
+const (
+	Clean = iota
+	Weakened
+	Infected
+	Flagged
+)
 
 func main() {
-	rules := make(map[string]string)
-
 	file, _ := os.Open("input.txt")
 	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		parts := strings.Split(scanner.Text(), " => ")
-		rules[parts[0]] = parts[1]
-	}
 
-	grid := []string{
-		".#.",
-		"..#",
-		"###",
-	}
-
-	for i := 0; i < 18; i++ {
-		var newSize int
-		var subSize int
-
-		if len(grid)%2 == 0 {
-			subSize = 2
-			newSize = len(grid) / 2 * 3
-		} else {
-			subSize = 3
-			newSize = len(grid) / 3 * 4
-		}
-
-		newGrid := make([]string, newSize)
-		for x := 0; x < newSize; x++ {
-			newGrid[x] = ""
-		}
-
-		for y := 0; y < len(grid); y += subSize {
-			for x := 0; x < len(grid); x += subSize {
-				var square []string
-				for dy := 0; dy < subSize; dy++ {
-					square = append(square, grid[y+dy][x:x+subSize])
-				}
-				newSquare := enhance(strings.Join(square, "/"), rules)
-				for dy, row := range strings.Split(newSquare, "/") {
-					newGrid[y/subSize*(subSize+1)+dy] += row
-				}
+	grid := make(map[position]int)
+	var startX, startY int
+	for y := 0; scanner.Scan(); y++ {
+		line := scanner.Text()
+		for x, c := range line {
+			if c == '#' {
+				grid[position{x, y}] = Infected
 			}
 		}
-		grid = newGrid
+		startX, startY = len(line)/2, y/2
 	}
 
-	count := 0
-	for _, row := range grid {
-		for _, pixel := range row {
-			if pixel == '#' {
-				count++
-			}
+	dx := []int{0, 1, 0, -1}
+	dy := []int{-1, 0, 1, 0}
+
+	x, y, dir := startX, startY, 0
+	infectedCount := 0
+
+	for i := 0; i < 10000000; i++ {
+		pos := position{x, y}
+		switch grid[pos] {
+		case Clean:
+			dir = (dir - 1 + 4) % 4
+			grid[pos] = Weakened
+		case Weakened:
+			grid[pos] = Infected
+			infectedCount++
+		case Infected:
+			dir = (dir + 1) % 4
+			grid[pos] = Flagged
+		case Flagged:
+			dir = (dir + 2) % 4
+			grid[pos] = Clean
 		}
-	}
-	fmt.Println(count)
-}
-
-func enhance(input string, rules map[string]string) string {
-	if result, ok := memo[input]; ok {
-		return result
+		x, y = x+dx[dir], y+dy[dir]
 	}
 
-	original := input
-	for i := 0; i < 4; i++ {
-		if output, ok := rules[input]; ok {
-			memo[original] = output
-			return output
-		}
-		input = rotate(input)
-	}
-	input = flip(input)
-	for i := 0; i < 4; i++ {
-		if output, ok := rules[input]; ok {
-			memo[original] = output
-			return output
-		}
-		input = rotate(input)
-	}
-	return ""
-}
-
-func rotate(input string) string {
-	parts := strings.Split(input, "/")
-	size := len(parts)
-	newParts := make([]string, size)
-	for x := 0; x < size; x++ {
-		var newRow string
-		for y := size - 1; y >= 0; y-- {
-			newRow += string(parts[y][x])
-		}
-		newParts[x] = newRow
-	}
-	return strings.Join(newParts, "/")
-}
-
-func flip(input string) string {
-	parts := strings.Split(input, "/")
-	for i, part := range parts {
-		parts[i] = reverse(part)
-	}
-	return strings.Join(parts, "/")
-}
-
-func reverse(input string) string {
-	runes := []rune(input)
-	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
-		runes[i], runes[j] = runes[j], runes[i]
-	}
-	return string(runes)
+	fmt.Println(infectedCount)
 }
