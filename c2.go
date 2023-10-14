@@ -1,53 +1,101 @@
 package main
 
 import (
-	"bufio"
+	"encoding/hex"
 	"fmt"
-	"os"
 	"strconv"
-	"strings"
 )
 
-type Scanner struct {
-	Range     int
-	Position  int
-	Direction int
+func reverseSection(arr []int, start, length int) {
+	n := len(arr)
+	for i, j := start, start+length-1; i < j; i, j = i+1, j-1 {
+		arr[i%n], arr[j%n] = arr[j%n], arr[i%n]
+	}
+}
+
+func knotHash(input string) string {
+	lengths := []int{}
+	for _, char := range input {
+		lengths = append(lengths, int(char))
+	}
+	lengths = append(lengths, 17, 31, 73, 47, 23)
+
+	list := make([]int, 256)
+	for i := range list {
+		list[i] = i
+	}
+
+	var position, skip int
+	for round := 0; round < 64; round++ {
+		for _, length := range lengths {
+			reverseSection(list, position, length)
+			position += length + skip
+			skip++
+		}
+	}
+
+	denseHash := make([]int, 16)
+	for i := 0; i < 16; i++ {
+		xor := 0
+		for j := 0; j < 16; j++ {
+			xor ^= list[i*16+j]
+		}
+		denseHash[i] = xor
+	}
+
+	hexHash := make([]byte, 16)
+	for i, v := range denseHash {
+		hexHash[i] = byte(v)
+	}
+	return hex.EncodeToString(hexHash)
+}
+
+func hexToBinary(hexStr string) string {
+	binaryStr := ""
+	for _, hexDigit := range hexStr {
+		val, _ := strconv.ParseUint(string(hexDigit), 16, 64)
+		binaryStr += fmt.Sprintf("%.4b", val)
+	}
+	return binaryStr
+}
+
+func dfs(x, y int, grid [][]int) {
+	if x < 0 || x >= 128 || y < 0 || y >= 128 || grid[x][y] != 1 {
+		return
+	}
+	grid[x][y] = 0
+	dfs(x-1, y, grid)
+	dfs(x+1, y, grid)
+	dfs(x, y-1, grid)
+	dfs(x, y+1, grid)
 }
 
 func main() {
-	file, err := os.Open("input.txt")
-	if err != nil {
-		fmt.Println("Error reading file:", err)
-		return
-	}
-	defer file.Close()
+	keyString := "nbysizxe"
+	grid := make([][]int, 128)
+	regions := 0
 
-	firewall := make(map[int]*Scanner)
-	scanner := bufio.NewScanner(file)
+	for i := range grid {
+		grid[i] = make([]int, 128)
+		rowKey := fmt.Sprintf("%s-%d", keyString, i)
+		hash := knotHash(rowKey)
+		binaryRow := hexToBinary(hash)
 
-	for scanner.Scan() {
-		fields := strings.Split(scanner.Text(), ": ")
-		depth, _ := strconv.Atoi(fields[0])
-		rng, _ := strconv.Atoi(fields[1])
-		firewall[depth] = &Scanner{Range: rng, Position: 0, Direction: 1}
-	}
-
-	delay := 0
-	for {
-		if passThrough(firewall, delay) {
-			break
-		}
-		delay++
-	}
-
-	fmt.Println(delay)
-}
-
-func passThrough(firewall map[int]*Scanner, delay int) bool {
-	for depth, scanner := range firewall {
-		if (depth+delay)%(2*(scanner.Range-1)) == 0 {
-			return false
+		for j, bit := range binaryRow {
+			if bit == '1' {
+				grid[i][j] = 1
+			}
 		}
 	}
-	return true
+
+	for i := 0; i < 128; i++ {
+		for j := 0; j < 128; j++ {
+			if grid[i][j] == 1 {
+				regions++
+				dfs(i, j, grid)
+			}
+		}
+	}
+
+	fmt.Println(regions)
 }

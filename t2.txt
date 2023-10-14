@@ -1,274 +1,47 @@
---- Day 13: Packet Scanners ---
-You need to cross a vast firewall. The firewall consists of several layers, each with a security scanner that moves back and forth across the layer. To succeed, you must not be detected by a scanner.
+--- Day 14: Disk Defragmentation ---
+Suddenly, a scheduled job activates the system's disk defragmenter. Were the situation different, you might sit and watch it for a while, but today, you just don't have that kind of time. It's soaking up valuable system resources that are needed elsewhere, and so the only option is to help it finish its task as soon as possible.
 
-By studying the firewall briefly, you are able to record (in your puzzle input) the depth of each layer and the range of the scanning area for the scanner within it, written as depth: range. Each layer has a thickness of exactly 1. A layer at depth 0 begins immediately inside the firewall; a layer at depth 1 would start immediately after that.
+The disk in question consists of a 128x128 grid; each square of the grid is either free or used. On this disk, the state of the grid is tracked by the bits in a sequence of knot hashes.
 
-For example, suppose you've recorded the following:
+A total of 128 knot hashes are calculated, each corresponding to a single row in the grid; each hash contains 128 bits which correspond to individual grid squares. Each bit of a hash indicates whether that square is free (0) or used (1).
 
-0: 3
-1: 2
-4: 4
-6: 4
-This means that there is a layer immediately inside the firewall (with range 3), a second layer immediately after that (with range 2), a third layer which begins at depth 4 (with range 4), and a fourth layer which begins at depth 6 (also with range 4). Visually, it might look like this:
+The hash inputs are a key string (your puzzle input), a dash, and a number from 0 to 127 corresponding to the row. For example, if your key string were flqrgnkx, then the first row would be given by the bits of the knot hash of flqrgnkx-0, the second row from the bits of the knot hash of flqrgnkx-1, and so on until the last row, flqrgnkx-127.
 
- 0   1   2   3   4   5   6
-[ ] [ ] ... ... [ ] ... [ ]
-[ ] [ ]         [ ]     [ ]
-[ ]             [ ]     [ ]
-                [ ]     [ ]
-Within each layer, a security scanner moves back and forth within its range. Each security scanner starts at the top and moves down until it reaches the bottom, then moves up until it reaches the top, and repeats. A security scanner takes one picosecond to move one step. Drawing scanners as S, the first few picoseconds look like this:
+The output of a knot hash is traditionally represented by 32 hexadecimal digits; each of these digits correspond to 4 bits, for a total of 4 * 32 = 128 bits. To convert to bits, turn each hexadecimal digit to its equivalent binary value, high-bit first: 0 becomes 0000, 1 becomes 0001, e becomes 1110, f becomes 1111, and so on; a hash that begins with a0c2017... in hexadecimal would begin with 10100000110000100000000101110000... in binary.
 
+Continuing this process, the first 8 rows and columns for key flqrgnkx appear as follows, using # to denote used squares, and . to denote free ones:
 
-Picosecond 0:
- 0   1   2   3   4   5   6
-[S] [S] ... ... [S] ... [S]
-[ ] [ ]         [ ]     [ ]
-[ ]             [ ]     [ ]
-                [ ]     [ ]
+##.#.#..-->
+.#.#.#.#   
+....#.#.   
+#.#.##.#   
+.##.#...   
+##..#..#   
+.#...#..   
+##.#.##.-->
+|      |   
+V      V   
+In this example, 8108 squares are used across the entire 128x128 grid.
 
-Picosecond 1:
- 0   1   2   3   4   5   6
-[ ] [ ] ... ... [ ] ... [ ]
-[S] [S]         [S]     [S]
-[ ]             [ ]     [ ]
-                [ ]     [ ]
+Given your actual key string, how many squares are used?
 
-Picosecond 2:
- 0   1   2   3   4   5   6
-[ ] [S] ... ... [ ] ... [ ]
-[ ] [ ]         [ ]     [ ]
-[S]             [S]     [S]
-                [ ]     [ ]
-
-Picosecond 3:
- 0   1   2   3   4   5   6
-[ ] [ ] ... ... [ ] ... [ ]
-[S] [S]         [ ]     [ ]
-[ ]             [ ]     [ ]
-                [S]     [S]
-Your plan is to hitch a ride on a packet about to move through the firewall. The packet will travel along the top of each layer, and it moves at one layer per picosecond. Each picosecond, the packet moves one layer forward (its first move takes it into layer 0), and then the scanners move one step. If there is a scanner at the top of the layer as your packet enters it, you are caught. (If a scanner moves into the top of its layer while you are there, you are not caught: it doesn't have time to notice you before you leave.) If you were to do this in the configuration above, marking your current position with parentheses, your passage through the firewall would look like this:
-
-Initial state:
- 0   1   2   3   4   5   6
-[S] [S] ... ... [S] ... [S]
-[ ] [ ]         [ ]     [ ]
-[ ]             [ ]     [ ]
-                [ ]     [ ]
-
-Picosecond 0:
- 0   1   2   3   4   5   6
-(S) [S] ... ... [S] ... [S]
-[ ] [ ]         [ ]     [ ]
-[ ]             [ ]     [ ]
-                [ ]     [ ]
-
- 0   1   2   3   4   5   6
-( ) [ ] ... ... [ ] ... [ ]
-[S] [S]         [S]     [S]
-[ ]             [ ]     [ ]
-                [ ]     [ ]
-
-
-Picosecond 1:
- 0   1   2   3   4   5   6
-[ ] ( ) ... ... [ ] ... [ ]
-[S] [S]         [S]     [S]
-[ ]             [ ]     [ ]
-                [ ]     [ ]
-
- 0   1   2   3   4   5   6
-[ ] (S) ... ... [ ] ... [ ]
-[ ] [ ]         [ ]     [ ]
-[S]             [S]     [S]
-                [ ]     [ ]
-
-
-Picosecond 2:
- 0   1   2   3   4   5   6
-[ ] [S] (.) ... [ ] ... [ ]
-[ ] [ ]         [ ]     [ ]
-[S]             [S]     [S]
-                [ ]     [ ]
-
- 0   1   2   3   4   5   6
-[ ] [ ] (.) ... [ ] ... [ ]
-[S] [S]         [ ]     [ ]
-[ ]             [ ]     [ ]
-                [S]     [S]
-
-
-Picosecond 3:
- 0   1   2   3   4   5   6
-[ ] [ ] ... (.) [ ] ... [ ]
-[S] [S]         [ ]     [ ]
-[ ]             [ ]     [ ]
-                [S]     [S]
-
- 0   1   2   3   4   5   6
-[S] [S] ... (.) [ ] ... [ ]
-[ ] [ ]         [ ]     [ ]
-[ ]             [S]     [S]
-                [ ]     [ ]
-
-
-Picosecond 4:
- 0   1   2   3   4   5   6
-[S] [S] ... ... ( ) ... [ ]
-[ ] [ ]         [ ]     [ ]
-[ ]             [S]     [S]
-                [ ]     [ ]
-
- 0   1   2   3   4   5   6
-[ ] [ ] ... ... ( ) ... [ ]
-[S] [S]         [S]     [S]
-[ ]             [ ]     [ ]
-                [ ]     [ ]
-
-
-Picosecond 5:
- 0   1   2   3   4   5   6
-[ ] [ ] ... ... [ ] (.) [ ]
-[S] [S]         [S]     [S]
-[ ]             [ ]     [ ]
-                [ ]     [ ]
-
- 0   1   2   3   4   5   6
-[ ] [S] ... ... [S] (.) [S]
-[ ] [ ]         [ ]     [ ]
-[S]             [ ]     [ ]
-                [ ]     [ ]
-
-
-Picosecond 6:
- 0   1   2   3   4   5   6
-[ ] [S] ... ... [S] ... (S)
-[ ] [ ]         [ ]     [ ]
-[S]             [ ]     [ ]
-                [ ]     [ ]
-
- 0   1   2   3   4   5   6
-[ ] [ ] ... ... [ ] ... ( )
-[S] [S]         [S]     [S]
-[ ]             [ ]     [ ]
-                [ ]     [ ]
-In this situation, you are caught in layers 0 and 6, because your packet entered the layer when its scanner was at the top when you entered it. You are not caught in layer 1, since the scanner moved into the top of the layer once you were already there.
-
-The severity of getting caught on a layer is equal to its depth multiplied by its range. (Ignore layers in which you do not get caught.) The severity of the whole trip is the sum of these values. In the example above, the trip severity is 0*3 + 6*4 = 24.
-
-Given the details of the firewall you've recorded, if you leave immediately, what is the severity of your whole trip?
-
-Your puzzle answer was 1960.
+Your puzzle answer was 8216.
 
 --- Part Two ---
-Now, you need to pass through the firewall without being caught - easier said than done.
+Now, all the defragmenter needs to know is the number of regions. A region is a group of used squares that are all adjacent, not including diagonals. Every used square is in exactly one region: lone used squares form their own isolated regions, while several adjacent squares all count as a single region.
 
-You can't control the speed of the packet, but you can delay it any number of picoseconds. For each picosecond you delay the packet before beginning your trip, all security scanners move one step. You're not in the firewall during this time; you don't enter layer 0 until you stop delaying the packet.
+In the example above, the following nine regions are visible, each marked with a distinct digit:
 
-In the example above, if you delay 10 picoseconds (picoseconds 0 - 9), you won't get caught:
+11.2.3..-->
+.1.2.3.4   
+....5.6.   
+7.8.55.9   
+.88.5...   
+88..5..8   
+.8...8..   
+88.8.88.-->
+|      |   
+V      V   
+Of particular interest is the region marked 8; while it does not appear contiguous in this small view, all of the squares marked 8 are connected when considering the whole 128x128 grid. In total, in this example, 1242 regions are present.
 
-State after delaying:
- 0   1   2   3   4   5   6
-[ ] [S] ... ... [ ] ... [ ]
-[ ] [ ]         [ ]     [ ]
-[S]             [S]     [S]
-                [ ]     [ ]
-
-Picosecond 10:
- 0   1   2   3   4   5   6
-( ) [S] ... ... [ ] ... [ ]
-[ ] [ ]         [ ]     [ ]
-[S]             [S]     [S]
-                [ ]     [ ]
-
- 0   1   2   3   4   5   6
-( ) [ ] ... ... [ ] ... [ ]
-[S] [S]         [S]     [S]
-[ ]             [ ]     [ ]
-                [ ]     [ ]
-
-
-Picosecond 11:
- 0   1   2   3   4   5   6
-[ ] ( ) ... ... [ ] ... [ ]
-[S] [S]         [S]     [S]
-[ ]             [ ]     [ ]
-                [ ]     [ ]
-
- 0   1   2   3   4   5   6
-[S] (S) ... ... [S] ... [S]
-[ ] [ ]         [ ]     [ ]
-[ ]             [ ]     [ ]
-                [ ]     [ ]
-
-
-Picosecond 12:
- 0   1   2   3   4   5   6
-[S] [S] (.) ... [S] ... [S]
-[ ] [ ]         [ ]     [ ]
-[ ]             [ ]     [ ]
-                [ ]     [ ]
-
- 0   1   2   3   4   5   6
-[ ] [ ] (.) ... [ ] ... [ ]
-[S] [S]         [S]     [S]
-[ ]             [ ]     [ ]
-                [ ]     [ ]
-
-
-Picosecond 13:
- 0   1   2   3   4   5   6
-[ ] [ ] ... (.) [ ] ... [ ]
-[S] [S]         [S]     [S]
-[ ]             [ ]     [ ]
-                [ ]     [ ]
-
- 0   1   2   3   4   5   6
-[ ] [S] ... (.) [ ] ... [ ]
-[ ] [ ]         [ ]     [ ]
-[S]             [S]     [S]
-                [ ]     [ ]
-
-
-Picosecond 14:
- 0   1   2   3   4   5   6
-[ ] [S] ... ... ( ) ... [ ]
-[ ] [ ]         [ ]     [ ]
-[S]             [S]     [S]
-                [ ]     [ ]
-
- 0   1   2   3   4   5   6
-[ ] [ ] ... ... ( ) ... [ ]
-[S] [S]         [ ]     [ ]
-[ ]             [ ]     [ ]
-                [S]     [S]
-
-
-Picosecond 15:
- 0   1   2   3   4   5   6
-[ ] [ ] ... ... [ ] (.) [ ]
-[S] [S]         [ ]     [ ]
-[ ]             [ ]     [ ]
-                [S]     [S]
-
- 0   1   2   3   4   5   6
-[S] [S] ... ... [ ] (.) [ ]
-[ ] [ ]         [ ]     [ ]
-[ ]             [S]     [S]
-                [ ]     [ ]
-
-
-Picosecond 16:
- 0   1   2   3   4   5   6
-[S] [S] ... ... [ ] ... ( )
-[ ] [ ]         [ ]     [ ]
-[ ]             [S]     [S]
-                [ ]     [ ]
-
- 0   1   2   3   4   5   6
-[ ] [ ] ... ... [ ] ... ( )
-[S] [S]         [S]     [S]
-[ ]             [ ]     [ ]
-                [ ]     [ ]
-Because all smaller delays would get you caught, the fewest number of picoseconds you would need to delay to get through safely is 10.
-
-What is the fewest number of picoseconds that you need to delay the packet to pass through the firewall without being caught?
+How many regions are present given your key string?
