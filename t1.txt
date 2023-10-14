@@ -1,23 +1,31 @@
---- Day 19: A Series of Tubes ---
-Somehow, a network packet got lost and ended up here. It's trying to follow a routing diagram (your puzzle input), but it's confused about where to go.
+--- Day 20: Particle Swarm ---
+Suddenly, the GPU contacts you, asking for help. Someone has asked it to simulate too many particles, and it won't be able to finish them all in time to render the next frame at this rate.
 
-Its starting point is just off the top of the diagram. Lines (drawn with |, -, and +) show the path it needs to take, starting by going down onto the only line connected to the top of the diagram. It needs to follow this path until it reaches the end (located somewhere within the diagram) and stop there.
+It transmits to you a buffer (your puzzle input) listing each particle in order (starting with particle 0, then particle 1, particle 2, and so on). For each particle, it provides the X, Y, and Z coordinates for the particle's position (p), velocity (v), and acceleration (a), each in the format <X,Y,Z>.
 
-Sometimes, the lines cross over each other; in these cases, it needs to continue going the same direction, and only turn left or right when there's no other option. In addition, someone has left letters on the line; these also don't change its direction, but it can use them to keep track of where it's been. For example:
+Each tick, all particles are updated simultaneously. A particle's properties are updated in the following order:
 
-     |          
-     |  +--+    
-     A  |  C    
- F---|----E|--+ 
-     |  |  |  D 
-     +B-+  +--+ 
+Increase the X velocity by the X acceleration.
+Increase the Y velocity by the Y acceleration.
+Increase the Z velocity by the Z acceleration.
+Increase the X position by the X velocity.
+Increase the Y position by the Y velocity.
+Increase the Z position by the Z velocity.
+Because of seemingly tenuous rationale involving z-buffering, the GPU would like to know which particle will stay closest to position <0,0,0> in the long term. Measure this using the Manhattan distance, which in this situation is simply the sum of the absolute values of a particle's X, Y, and Z position.
 
-Given this diagram, the packet needs to take the following path:
+For example, suppose you are only given two particles, both of which stay entirely on the X-axis (for simplicity). Drawing the current states of particles 0 and 1 (in that order) with an adjacent a number line and diagram of current X positions (marked in parentheses), the following would take place:
 
-Starting at the only line touching the top of the diagram, it must go down, pass through A, and continue onward to the first +.
-Travel right, up, and right, passing through B in the process.
-Continue down (collecting C), right, and up (collecting D).
-Finally, go all the way left through E and stopping at F.
-Following the path to the end, the letters it sees on its path are ABCDEF.
+p=< 3,0,0>, v=< 2,0,0>, a=<-1,0,0>    -4 -3 -2 -1  0  1  2  3  4
+p=< 4,0,0>, v=< 0,0,0>, a=<-2,0,0>                         (0)(1)
 
-The little packet looks up at you, hoping you can help it find the way. What letters will it see (in the order it would see them) if it follows the path? (The routing diagram is very wide; make sure you view it without line wrapping.)
+p=< 4,0,0>, v=< 1,0,0>, a=<-1,0,0>    -4 -3 -2 -1  0  1  2  3  4
+p=< 2,0,0>, v=<-2,0,0>, a=<-2,0,0>                      (1)   (0)
+
+p=< 4,0,0>, v=< 0,0,0>, a=<-1,0,0>    -4 -3 -2 -1  0  1  2  3  4
+p=<-2,0,0>, v=<-4,0,0>, a=<-2,0,0>          (1)               (0)
+
+p=< 3,0,0>, v=<-1,0,0>, a=<-1,0,0>    -4 -3 -2 -1  0  1  2  3  4
+p=<-8,0,0>, v=<-6,0,0>, a=<-2,0,0>                         (0)   
+At this point, particle 1 will never be closer to <0,0,0> than particle 0, and so, in the long run, particle 0 will stay closest.
+
+Which particle will stay closest to position <0,0,0> in the long term?

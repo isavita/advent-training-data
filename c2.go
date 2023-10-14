@@ -4,7 +4,13 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 )
+
+type Particle struct {
+	p, v, a [3]int
+}
 
 func main() {
 	file, err := os.Open("input.txt")
@@ -13,55 +19,51 @@ func main() {
 	}
 	defer file.Close()
 
-	var grid [][]rune
+	var particles []Particle
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		grid = append(grid, []rune(scanner.Text()))
-	}
+		line := scanner.Text()
+		parts := strings.Split(line, ", ")
 
-	x, y := 0, 0
-	for i := range grid[0] {
-		if grid[0][i] == '|' {
-			x = i
-			break
-		}
-	}
-
-	dx, dy := 0, 1
-	var steps int
-
-	for {
-		if x < 0 || x >= len(grid[0]) || y < 0 || y >= len(grid) {
-			break
-		}
-
-		cell := grid[y][x]
-
-		if cell == ' ' {
-			break
-		}
-
-		steps++
-
-		if cell == '+' {
-			if dx == 0 {
-				if x > 0 && (grid[y][x-1] == '-' || (grid[y][x-1] >= 'A' && grid[y][x-1] <= 'Z')) {
-					dx, dy = -1, 0
-				} else {
-					dx, dy = 1, 0
-				}
-			} else {
-				if y > 0 && (grid[y-1][x] == '|' || (grid[y-1][x] >= 'A' && grid[y-1][x] <= 'Z')) {
-					dx, dy = 0, -1
-				} else {
-					dx, dy = 0, 1
+		var p Particle
+		for i, part := range parts {
+			coords := strings.Split(part[3:len(part)-1], ",")
+			for j, coord := range coords {
+				num, _ := strconv.Atoi(coord)
+				switch i {
+				case 0:
+					p.p[j] = num
+				case 1:
+					p.v[j] = num
+				case 2:
+					p.a[j] = num
 				}
 			}
 		}
-
-		x += dx
-		y += dy
+		particles = append(particles, p)
 	}
 
-	fmt.Println(steps)
+	for tick := 0; tick < 1000; tick++ {
+		positions := make(map[string]int)
+		for i, particle := range particles {
+			for j := 0; j < 3; j++ {
+				particle.v[j] += particle.a[j]
+				particle.p[j] += particle.v[j]
+			}
+			particles[i] = particle
+			posStr := fmt.Sprintf("%d,%d,%d", particle.p[0], particle.p[1], particle.p[2])
+			positions[posStr]++
+		}
+
+		var newParticles []Particle
+		for _, particle := range particles {
+			posStr := fmt.Sprintf("%d,%d,%d", particle.p[0], particle.p[1], particle.p[2])
+			if positions[posStr] == 1 {
+				newParticles = append(newParticles, particle)
+			}
+		}
+		particles = newParticles
+	}
+
+	fmt.Println(len(particles))
 }
