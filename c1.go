@@ -4,16 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 )
-
-func getValue(arg string, registers map[string]int) int {
-	if val, err := strconv.Atoi(arg); err == nil {
-		return val
-	}
-	return registers[arg]
-}
 
 func main() {
 	file, err := os.Open("input.txt")
@@ -22,42 +13,57 @@ func main() {
 	}
 	defer file.Close()
 
-	var instructions [][]string
+	var grid [][]rune
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		instructions = append(instructions, strings.Fields(scanner.Text()))
+		grid = append(grid, []rune(scanner.Text()))
 	}
 
-	registers := make(map[string]int)
-	var lastSound int
+	x, y := 0, 0
+	for i := range grid[0] {
+		if grid[0][i] == '|' {
+			x = i
+			break
+		}
+	}
 
-	for i := 0; i < len(instructions); {
-		instruction := instructions[i]
-		cmd := instruction[0]
-		arg1 := instruction[1]
+	dx, dy := 0, 1
+	var letters []rune
 
-		switch cmd {
-		case "snd":
-			lastSound = getValue(arg1, registers)
-		case "set":
-			registers[arg1] = getValue(instruction[2], registers)
-		case "add":
-			registers[arg1] += getValue(instruction[2], registers)
-		case "mul":
-			registers[arg1] *= getValue(instruction[2], registers)
-		case "mod":
-			registers[arg1] %= getValue(instruction[2], registers)
-		case "rcv":
-			if getValue(arg1, registers) != 0 {
-				fmt.Println(lastSound)
-				return
-			}
-		case "jgz":
-			if getValue(arg1, registers) > 0 {
-				i += getValue(instruction[2], registers)
-				continue
+	for {
+		if x < 0 || x >= len(grid[0]) || y < 0 || y >= len(grid) {
+			break
+		}
+
+		cell := grid[y][x]
+
+		if cell == ' ' {
+			break
+		}
+
+		if cell >= 'A' && cell <= 'Z' {
+			letters = append(letters, cell)
+		}
+
+		if cell == '+' {
+			if dx == 0 {
+				if x > 0 && (grid[y][x-1] == '-' || (grid[y][x-1] >= 'A' && grid[y][x-1] <= 'Z')) {
+					dx, dy = -1, 0
+				} else {
+					dx, dy = 1, 0
+				}
+			} else {
+				if y > 0 && (grid[y-1][x] == '|' || (grid[y-1][x] >= 'A' && grid[y-1][x] <= 'Z')) {
+					dx, dy = 0, -1
+				} else {
+					dx, dy = 0, 1
+				}
 			}
 		}
-		i++
+
+		x += dx
+		y += dy
 	}
+
+	fmt.Println(string(letters))
 }
